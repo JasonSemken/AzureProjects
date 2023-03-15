@@ -46,25 +46,25 @@ resource "azurerm_virtual_network" "vnet-02" {
 }
 
 # Peer Vnets
-resource "azurerm_virtual_network_peering" "main01-01" {
+resource "azurerm_virtual_network_peering" "MainToVnet01" {
   name = "Peer-${azurerm_virtual_network.vnet-main.name}-to-${azurerm_virtual_network.vnet-01.name}"
   resource_group_name = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet-main.name
   remote_virtual_network_id = azurerm_virtual_network.vnet-01.id
 }
-resource "azurerm_virtual_network_peering" "main01-02" {
+resource "azurerm_virtual_network_peering" "MainFromVnet01" {
   name = "Peer-${azurerm_virtual_network.vnet-01.name}-to-${azurerm_virtual_network.vnet-main.name}"
   resource_group_name = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet-01.name
   remote_virtual_network_id = azurerm_virtual_network.vnet-main.id
 }
-resource "azurerm_virtual_network_peering" "main02-01" {
+resource "azurerm_virtual_network_peering" "MainToVnet02" {
   name = "Peer-${azurerm_virtual_network.vnet-main.name}-to-${azurerm_virtual_network.vnet-02.name}"
   resource_group_name = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet-main.name
   remote_virtual_network_id = azurerm_virtual_network.vnet-02.id
 }
-resource "azurerm_virtual_network_peering" "main02-02" {
+resource "azurerm_virtual_network_peering" "MainFromVnet02" {
   name = "Peer-${azurerm_virtual_network.vnet-02.name}-to-${azurerm_virtual_network.vnet-main.name}"
   resource_group_name = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet-02.name
