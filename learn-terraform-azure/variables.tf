@@ -2,12 +2,18 @@ variable "resource_group_name" {
   default = "tfTestie"
 }
 
-variable "vnet_name" {
-  main = "myTFVnetMain"
-  vnet01 = "myTFVnet01"
-  vnet02 = "myTFVnet02"
+variable "vnet_name_1" {
+  default = "myTFVnetMain"
 }
 
-variable "region" {
+variable "vnet_name_2" {
+  default = "myTFVnet01"
+}
+
+variable "vnet_name_3" {
+  default = "myTFVnet02"
+}
+
+variable "region_name" {
   default = "australiaeast"
 }

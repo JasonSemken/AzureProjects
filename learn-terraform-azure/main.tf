@@ -16,7 +16,7 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
-  location = var.region
+  location = var.region_name
   tags = {
     Environment = "Terraform Getting Started"
     Team = "DevOps"
@@ -25,23 +25,23 @@ resource "azurerm_resource_group" "rg" {
 
 # Create Primary vnet
 resource "azurerm_virtual_network" "vnet-main" {
-  name                = var.vnet_name.main
+  name                = var.vnet_name_1
   address_space       = ["10.0.0.0/24"]
-  location            = var.region
+  location            = var.region_name
   resource_group_name = azurerm_resource_group.rg.name
 }
 
 # Create seconday vnets
 resource "azurerm_virtual_network" "vnet-01" {
-  name                = var.vnet_name.vnet01
+  name                = var.vnet_name_2
   address_space       = ["10.0.1.0/24"]
-  location            = var.region
+  location            = var.region_name
   resource_group_name = azurerm_resource_group.rg.name
 }
 resource "azurerm_virtual_network" "vnet-02" {
-  name                = var.vnet_name.vnet02
+  name                = var.vnet_name_3
   address_space       = ["10.0.2.0/24"]
-  location            = var.region
+  location            = var.region_name
   resource_group_name = azurerm_resource_group.rg.name
 }
 
