@@ -14,7 +14,7 @@ provider "azurerm" {
   features {}
 }
 
-resource "azurerm_resource_group" "rg" {
+resource "azurerm_resource_group" "rg-01" {
   name     = var.resource_group_name
   location = var.region_name
   tags = {
@@ -28,7 +28,7 @@ resource "azurerm_virtual_network" "vnet-main" {
   name                = var.vnet_name_1
   address_space       = ["10.0.0.0/22"]
   location            = var.region_name
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.rg-01.name
 
   subnet {
     name = var.subnet_name_1
@@ -45,7 +45,7 @@ resource "azurerm_virtual_network" "vnet-01" {
   name                = var.vnet_name_2
   address_space       = ["10.0.4.0/23"]
   location            = var.region_name
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.rg-01.name
 
   subnet {
     name = var.subnet_name_2
@@ -57,7 +57,7 @@ resource "azurerm_virtual_network" "vnet-02" {
   name                = var.vnet_name_3
   address_space       = ["10.0.6.0/23"]
   location            = var.region_name
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.rg-01.name
 
   subnet {
     name = var.subnet_name_3
@@ -68,25 +68,25 @@ resource "azurerm_virtual_network" "vnet-02" {
 # Peer Vnets
 resource "azurerm_virtual_network_peering" "MainToVnet01" {
   name = "Peer-${azurerm_virtual_network.vnet-main.name}-to-${azurerm_virtual_network.vnet-01.name}"
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.rg-01.name
   virtual_network_name = azurerm_virtual_network.vnet-main.name
   remote_virtual_network_id = azurerm_virtual_network.vnet-01.id
 }
 resource "azurerm_virtual_network_peering" "MainFromVnet01" {
   name = "Peer-${azurerm_virtual_network.vnet-01.name}-to-${azurerm_virtual_network.vnet-main.name}"
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.rg-01.name
   virtual_network_name = azurerm_virtual_network.vnet-01.name
   remote_virtual_network_id = azurerm_virtual_network.vnet-main.id
 }
 resource "azurerm_virtual_network_peering" "MainToVnet02" {
   name = "Peer-${azurerm_virtual_network.vnet-main.name}-to-${azurerm_virtual_network.vnet-02.name}"
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.rg-01.name
   virtual_network_name = azurerm_virtual_network.vnet-main.name
   remote_virtual_network_id = azurerm_virtual_network.vnet-02.id
 }
 resource "azurerm_virtual_network_peering" "MainFromVnet02" {
   name = "Peer-${azurerm_virtual_network.vnet-02.name}-to-${azurerm_virtual_network.vnet-main.name}"
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.rg-01.name
   virtual_network_name = azurerm_virtual_network.vnet-02.name
   remote_virtual_network_id = azurerm_virtual_network.vnet-main.id
 }
@@ -103,7 +103,7 @@ resource "azurerm_key_vault" "kv1" {
   depends_on = [ azurerm_resource_group.rg ]
   name                        = random_id.kvname.hex
   location                    = var.region_name
-  resource_group_name         = azurerm_resource_group.rg.name
+  resource_group_name         = azurerm_resource_group.rg-01.name
   enabled_for_disk_encryption = true
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   soft_delete_retention_days  = 7
@@ -141,10 +141,10 @@ resource "azurerm_key_vault_secret" "adminPW" {
 }
 
 # Create Windows Virtual Machine Interface
-resource "azurerm_network_interface" "tfVM01" {
-  name                = "${var.tfVM01}-nic"
+resource "azurerm_network_interface" "vm-01" {
+  name                = "${var.vm_name_1}-nic"
   location            = var.region_name
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.rg-01.name
 
   ip_configuration {
     name                          = "internal"
@@ -154,15 +154,15 @@ resource "azurerm_network_interface" "tfVM01" {
 }
 
 # Create Windows Virtual Machine
-resource "azurerm_windows_virtual_machine" "tfVM01" {
-  name                = "${var.tfVM01}"
-  resource_group_name = azurerm_resource_group.rg.name
+resource "azurerm_windows_virtual_machine" "vm-01" {
+  name                = "${var.vm_name_1}"
+  resource_group_name = azurerm_resource_group.rg-01.name
   location            = var.region_name
   size                = "Standard_F2"
   admin_username      = var.adminUN
   admin_password      = random_password.adminPW.result
   network_interface_ids = [
-    azurerm_network_interface.tfVM01.id,
+    azurerm_network_interface.vm-01.id,
   ]
 
   os_disk {
@@ -173,7 +173,7 @@ resource "azurerm_windows_virtual_machine" "tfVM01" {
   source_image_reference {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
-    sku       = "2016-Datacenter"
+    sku       = "2019-Datacenter"
     version   = "latest"
   }
 }

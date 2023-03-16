@@ -30,7 +30,7 @@ variable "subnet_name_3" {
   default = "myTFVnet02Sub1"
 }
 
-variable "tfVM01" {
+variable "vm_name_1" {
   default = "tfVM01"
 }
 
