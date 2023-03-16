@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.0.2"
+      version = "~> 3.47.0"
     }
   }
 
@@ -91,3 +91,89 @@ resource "azurerm_virtual_network_peering" "MainFromVnet02" {
   remote_virtual_network_id = azurerm_virtual_network.vnet-main.id
 }
 
+#Create KeyVault ID
+resource "random_id" "kvname" {
+  byte_length = 5
+  prefix = "keyvault"
+}
+
+#Keyvault Creation
+data "azurerm_client_config" "current" {}
+resource "azurerm_key_vault" "kv1" {
+  depends_on = [ azurerm_resource_group.rg ]
+  name                        = random_id.kvname.hex
+  location                    = var.region_name
+  resource_group_name         = azurerm_resource_group.rg.name
+  enabled_for_disk_encryption = true
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+
+  sku_name = "standard"
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+    key_permissions = [
+      "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore",
+    ]
+    secret_permissions = [
+      "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set",
+    ]
+    storage_permissions = [
+      "Get",
+    ]
+  }
+}
+
+#Create KeyVault VM password
+resource "random_password" "adminPW" {
+  length  = 20
+  special = true
+}
+
+#Create Key Vault Secret
+resource "azurerm_key_vault_secret" "adminPW" {
+  name         = "adminPW"
+  value        = random_password.adminPW.result
+  key_vault_id = azurerm_key_vault.kv1.id
+  depends_on = [ azurerm_key_vault.kv1 ]
+}
+
+# Create Windows Virtual Machine Interface
+resource "azurerm_network_interface" "tfVM01" {
+  name                = "${var.tfVM01}-nic"
+  location            = var.region_name
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = "${azurerm_virtual_network.vnet-01.subnet.*.id[0]}"
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+# Create Windows Virtual Machine
+resource "azurerm_windows_virtual_machine" "tfVM01" {
+  name                = "${var.tfVM01}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = var.region_name
+  size                = "Standard_F2"
+  admin_username      = var.adminUN
+  admin_password      = random_password.adminPW.result
+  network_interface_ids = [
+    azurerm_network_interface.tfVM01.id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2016-Datacenter"
+    version   = "latest"
+  }
+}

@@ -29,3 +29,11 @@ variable "subnet_name_2" {
 variable "subnet_name_3" {
   default = "myTFVnet02Sub1"
 }
+
+variable "tfVM01" {
+  default = "tfVM01"
+}
+
+variable "adminUN" {
+  default = "adminuser"
+}
