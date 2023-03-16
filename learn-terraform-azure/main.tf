@@ -26,23 +26,43 @@ resource "azurerm_resource_group" "rg" {
 # Create Primary vnet
 resource "azurerm_virtual_network" "vnet-main" {
   name                = var.vnet_name_1
-  address_space       = ["10.0.0.0/24"]
+  address_space       = ["10.0.0.0/22"]
   location            = var.region_name
   resource_group_name = azurerm_resource_group.rg.name
+
+  subnet {
+    name = var.subnet_name_1
+    address_prefix = "10.0.0.0/24"
+  }
+  subnet {
+    name = "GatewaySubnet"
+    address_prefix = "10.0.1.0/24"
+  }
 }
 
 # Create seconday vnets
 resource "azurerm_virtual_network" "vnet-01" {
   name                = var.vnet_name_2
-  address_space       = ["10.0.1.0/24"]
+  address_space       = ["10.0.4.0/23"]
   location            = var.region_name
   resource_group_name = azurerm_resource_group.rg.name
+
+  subnet {
+    name = var.subnet_name_2
+    address_prefix = "10.0.4.0/24"
+  }
 }
+
 resource "azurerm_virtual_network" "vnet-02" {
   name                = var.vnet_name_3
-  address_space       = ["10.0.2.0/24"]
+  address_space       = ["10.0.6.0/23"]
   location            = var.region_name
   resource_group_name = azurerm_resource_group.rg.name
+
+  subnet {
+    name = var.subnet_name_3
+    address_prefix = "10.0.6.0/24"
+  }
 }
 
 # Peer Vnets
@@ -70,3 +90,4 @@ resource "azurerm_virtual_network_peering" "MainFromVnet02" {
   virtual_network_name = azurerm_virtual_network.vnet-02.name
   remote_virtual_network_id = azurerm_virtual_network.vnet-main.id
 }
+
