@@ -34,6 +34,10 @@ variable "vm_name_1" {
   default = "tfVM01"
 }
 
+variable "vm_name_2" {
+  default = "tfVM02"
+}
+
 variable "adminUN" {
   default = "adminuser"
 }

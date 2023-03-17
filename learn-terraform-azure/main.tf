@@ -91,16 +91,16 @@ resource "azurerm_virtual_network_peering" "MainFromVnet02" {
   remote_virtual_network_id = azurerm_virtual_network.vnet-main.id
 }
 
-#Create KeyVault ID
+# Create KeyVault ID
 resource "random_id" "kvname" {
   byte_length = 5
   prefix = "keyvault"
 }
 
-#Keyvault Creation
+# Keyvault Creation
 data "azurerm_client_config" "current" {}
 resource "azurerm_key_vault" "kv1" {
-  depends_on = [ azurerm_resource_group.rg ]
+  depends_on = [ azurerm_resource_group.rg-01 ]
   name                        = random_id.kvname.hex
   location                    = var.region_name
   resource_group_name         = azurerm_resource_group.rg-01.name
@@ -126,13 +126,13 @@ resource "azurerm_key_vault" "kv1" {
   }
 }
 
-#Create KeyVault VM password
+# Create KeyVault VM password
 resource "random_password" "adminPW" {
   length  = 20
   special = true
 }
 
-#Create Key Vault Secret
+# Create Key Vault Secret
 resource "azurerm_key_vault_secret" "adminPW" {
   name         = "adminPW"
   value        = random_password.adminPW.result
@@ -163,6 +163,44 @@ resource "azurerm_windows_virtual_machine" "vm-01" {
   admin_password      = random_password.adminPW.result
   network_interface_ids = [
     azurerm_network_interface.vm-01.id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2019-Datacenter"
+    version   = "latest"
+  }
+}
+
+# Create Windows Virtual Machine Interface
+resource "azurerm_network_interface" "vm-02" {
+  name                = "${var.vm_name_2}-nic"
+  location            = var.region_name
+  resource_group_name = azurerm_resource_group.rg-01.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = "${azurerm_virtual_network.vnet-02.subnet.*.id[0]}"
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+# Create Windows Virtual Machine
+resource "azurerm_windows_virtual_machine" "vm-02" {
+  name                = "${var.vm_name_2}"
+  resource_group_name = azurerm_resource_group.rg-01.name
+  location            = var.region_name
+  size                = "Standard_F2"
+  admin_username      = var.adminUN
+  admin_password      = azurerm_key_vault_secret.adminPW.value
+  network_interface_ids = [
+    azurerm_network_interface.vm-02.id,
   ]
 
   os_disk {
