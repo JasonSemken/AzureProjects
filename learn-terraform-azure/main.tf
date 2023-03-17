@@ -23,25 +23,20 @@ resource "azurerm_resource_group" "rg-01" {
   }
 }
 
-# Create Primary vnet
-resource "azurerm_virtual_network" "vnet-main" {
+# Create vNets
+resource "azurerm_virtual_network" "vnet-01" {
   name                = var.vnet_name_1
-  address_space       = ["10.0.0.0/22"]
+  address_space       = ["10.0.2.0/23"]
   location            = var.region_name
   resource_group_name = azurerm_resource_group.rg-01.name
 
   subnet {
     name = var.subnet_name_1
-    address_prefix = "10.0.0.0/24"
-  }
-  subnet {
-    name = "GatewaySubnet"
-    address_prefix = "10.0.1.0/24"
+    address_prefix = "10.0.2.0/24"
   }
 }
 
-# Create seconday vnets
-resource "azurerm_virtual_network" "vnet-01" {
+resource "azurerm_virtual_network" "vnet-02" {
   name                = var.vnet_name_2
   address_space       = ["10.0.4.0/23"]
   location            = var.region_name
@@ -53,19 +48,7 @@ resource "azurerm_virtual_network" "vnet-01" {
   }
 }
 
-resource "azurerm_virtual_network" "vnet-02" {
-  name                = var.vnet_name_3
-  address_space       = ["10.0.6.0/23"]
-  location            = var.region_name
-  resource_group_name = azurerm_resource_group.rg-01.name
-
-  subnet {
-    name = var.subnet_name_3
-    address_prefix = "10.0.6.0/24"
-  }
-}
-
-# Peer Vnets
+/* LEGACY - Peer Vnets
 resource "azurerm_virtual_network_peering" "MainToVnet01" {
   name = "Peer-${azurerm_virtual_network.vnet-main.name}-to-${azurerm_virtual_network.vnet-01.name}"
   resource_group_name = azurerm_resource_group.rg-01.name
@@ -90,6 +73,71 @@ resource "azurerm_virtual_network_peering" "MainFromVnet02" {
   virtual_network_name = azurerm_virtual_network.vnet-02.name
   remote_virtual_network_id = azurerm_virtual_network.vnet-main.id
 }
+*/
+
+# Create Virutal WAN
+resource "azurerm_virtual_wan" "vWAN" {
+  name = var.vwan_name
+  location = var.region_name
+  resource_group_name = azurerm_resource_group.rg-01.name
+}
+
+# Create Virutal Hub
+resource "azurerm_virtual_hub" "vHUB" {
+  name = var.vhub_name
+  location = var.region_name
+  resource_group_name = azurerm_resource_group.rg-01.name
+  virtual_wan_id = azurerm_virtual_wan.vWAN.id
+  address_prefix = "10.0.0.0/23"
+}
+
+# Create connections from Virutal Hub to vnets
+resource "azurerm_virtual_hub_connection" "vHUB-connection-01" {
+  name = var.vhub_connecion_name_01
+  virtual_hub_id = azurerm_virtual_hub.vHUB.id
+  remote_virtual_network_id = azurerm_virtual_network.vnet-01.id
+}
+resource "azurerm_virtual_hub_connection" "vHUB-connection-02" {
+  name = var.vhub_connecion_name_02
+  virtual_hub_id = azurerm_virtual_hub.vHUB.id
+  remote_virtual_network_id = azurerm_virtual_network.vnet-02.id
+}
+
+/* Working progress
+# Create VPN Server Configuration
+resource "azurerm_vpn_server_configuration" "vpn-server" {
+  name = var.vpn_config_01
+  resource_group_name = azurerm_resource_group.rg-01.name
+  location = var.region_name
+  vpn_authentication_types = ["AAD"]
+
+  azure_active_directory_authentication {
+    audience = 
+    issuer = "https://sts.windows.net/${var.directory_id}"
+    tenant = data.azurerm_client_config.current.tenant_id
+  }
+}
+
+# Create Point to Site VPN Gateway
+resource "azurerm_point_to_site_vpn_gateway" "p2s-01" {
+  name = var.p2s_name_01
+  location = var.region_name
+  resource_group_name = azurerm_resource_group.rg-01.name
+  virtual_hub_id = azurerm_virtual_hub.vHUB.id
+  vpn_server_configuration_id = azurerm_vpn_server_configuration.vpn-server.id
+  scale_unit = 1
+
+  connection_configuration {
+    name = var.p2s_gateway_config_name_01
+
+    vpn_client_address_pool {
+      address_prefixes = [
+        "192.168.0.1/24"
+      ]
+    }
+  }
+}
+*/
 
 # Create KeyVault ID
 resource "random_id" "kvname" {
@@ -97,7 +145,7 @@ resource "random_id" "kvname" {
   prefix = "keyvault"
 }
 
-# Keyvault Creation
+# Create Keyvault
 data "azurerm_client_config" "current" {}
 resource "azurerm_key_vault" "kv1" {
   depends_on = [ azurerm_resource_group.rg-01 ]
