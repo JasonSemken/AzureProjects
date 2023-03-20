@@ -71,5 +71,10 @@ variable "p2s_gateway_config_name_01" {
 }
 
 variable "directory_id" {
+  description = "Azure AD Tenant ID"
   default = "230685fb-eb1f-4dae-a440-12119ef36312"
+}
+
+variable "VPN-Users-GUID" {
+  default = "2a0b3563-ba10-4948-be9a-975588ef86b3"
 }

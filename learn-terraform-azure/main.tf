@@ -103,7 +103,6 @@ resource "azurerm_virtual_hub_connection" "vHUB-connection-02" {
   remote_virtual_network_id = azurerm_virtual_network.vnet-02.id
 }
 
-/* Working progress
 # Create VPN Server Configuration
 resource "azurerm_vpn_server_configuration" "vpn-server" {
   name = var.vpn_config_01
@@ -112,9 +111,9 @@ resource "azurerm_vpn_server_configuration" "vpn-server" {
   vpn_authentication_types = ["AAD"]
 
   azure_active_directory_authentication {
-    audience = 
-    issuer = "https://sts.windows.net/${var.directory_id}"
-    tenant = data.azurerm_client_config.current.tenant_id
+    audience = "41b23e61-6c1e-4545-b367-cd054e0ed4b4"
+    issuer = "https://sts.windows.net/${var.directory_id}/"
+    tenant = "https://login.microsoftonline.com/${var.directory_id}/"
   }
 }
 
@@ -132,12 +131,12 @@ resource "azurerm_point_to_site_vpn_gateway" "p2s-01" {
 
     vpn_client_address_pool {
       address_prefixes = [
-        "192.168.0.1/24"
+        "192.168.0.0/24"
       ]
     }
   }
 }
-*/
+
 
 # Create KeyVault ID
 resource "random_id" "kvname" {
