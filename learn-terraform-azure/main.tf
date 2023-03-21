@@ -23,7 +23,7 @@ resource "azurerm_resource_group" "rg-01" {
   }
 }
 
-# Create vNets
+# Create VNets
 resource "azurerm_virtual_network" "vnet-01" {
   name                = var.vnet_name_1
   address_space       = ["10.0.2.0/23"]
@@ -91,7 +91,7 @@ resource "azurerm_virtual_hub" "vHUB" {
   address_prefix = "10.0.0.0/23"
 }
 
-# Create connections from Virutal Hub to vnets
+# Create connections from Virutal Hub to VNets
 resource "azurerm_virtual_hub_connection" "vHUB-connection-01" {
   name = var.vhub_connecion_name_01
   virtual_hub_id = azurerm_virtual_hub.vHUB.id
@@ -137,14 +137,13 @@ resource "azurerm_point_to_site_vpn_gateway" "p2s-01" {
   }
 }
 
-
-# Create KeyVault ID
+# Create Key Vault ID
 resource "random_id" "kvname" {
   byte_length = 5
   prefix = "keyvault"
 }
 
-# Create Keyvault
+# Create Key Vault
 data "azurerm_client_config" "current" {}
 resource "azurerm_key_vault" "kv1" {
   depends_on = [ azurerm_resource_group.rg-01 ]
@@ -173,13 +172,13 @@ resource "azurerm_key_vault" "kv1" {
   }
 }
 
-# Create KeyVault VM password
+# Create Key Vault VM password
 resource "random_password" "adminPW" {
   length  = 20
   special = true
 }
 
-# Create Key Vault Secret
+# Create Key Vault Secret for VM password
 resource "azurerm_key_vault_secret" "adminPW" {
   name         = "adminPW"
   value        = random_password.adminPW.result
@@ -187,20 +186,7 @@ resource "azurerm_key_vault_secret" "adminPW" {
   depends_on = [ azurerm_key_vault.kv1 ]
 }
 
-# Create Windows Virtual Machine Interface
-resource "azurerm_network_interface" "vm-01" {
-  name                = "${var.vm_name_1}-nic"
-  location            = var.region_name
-  resource_group_name = azurerm_resource_group.rg-01.name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = "${azurerm_virtual_network.vnet-01.subnet.*.id[0]}"
-    private_ip_address_allocation = "Dynamic"
-  }
-}
-
-# Create Windows Virtual Machine
+# Create Windows Virtual Machines
 resource "azurerm_windows_virtual_machine" "vm-01" {
   name                = "${var.vm_name_1}"
   resource_group_name = azurerm_resource_group.rg-01.name
@@ -224,21 +210,6 @@ resource "azurerm_windows_virtual_machine" "vm-01" {
     version   = "latest"
   }
 }
-
-# Create Windows Virtual Machine Interface
-resource "azurerm_network_interface" "vm-02" {
-  name                = "${var.vm_name_2}-nic"
-  location            = var.region_name
-  resource_group_name = azurerm_resource_group.rg-01.name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = "${azurerm_virtual_network.vnet-02.subnet.*.id[0]}"
-    private_ip_address_allocation = "Dynamic"
-  }
-}
-
-# Create Windows Virtual Machine
 resource "azurerm_windows_virtual_machine" "vm-02" {
   name                = "${var.vm_name_2}"
   resource_group_name = azurerm_resource_group.rg-01.name
@@ -260,5 +231,29 @@ resource "azurerm_windows_virtual_machine" "vm-02" {
     offer     = "WindowsServer"
     sku       = "2019-Datacenter"
     version   = "latest"
+  }
+}
+
+# Create Windows Virtual Machine Interfaces
+resource "azurerm_network_interface" "vm-01" {
+  name                = "${var.vm_name_1}-nic"
+  location            = var.region_name
+  resource_group_name = azurerm_resource_group.rg-01.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = "${azurerm_virtual_network.vnet-01.subnet.*.id[0]}"
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+resource "azurerm_network_interface" "vm-02" {
+  name                = "${var.vm_name_2}-nic"
+  location            = var.region_name
+  resource_group_name = azurerm_resource_group.rg-01.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = "${azurerm_virtual_network.vnet-02.subnet.*.id[0]}"
+    private_ip_address_allocation = "Dynamic"
   }
 }
